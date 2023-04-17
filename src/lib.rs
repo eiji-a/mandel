@@ -3,7 +3,7 @@
 use std::convert::TryInto;
 use std::fmt;
 use wgpu::util::DeviceExt;
-use image::{ImageBuffer, RgbaImage};
+use image::{ImageBuffer, Rgba, RgbaImage};
 
 
 #[repr(C)]
@@ -158,60 +158,35 @@ const HEIGHT: f32 = 4.0;
 
 pub async fn run(x: &u32, y: &u32) {
   let mut state = State::new().await;
-//  let result = state.compute(*numbers);
-//  let disp_result = result.iter()
-//    .map(|&n| match n {
-//      OVERFLOW => "OVERFLOW".to_string(),
-//      _ => n.to_string(),
-//    })
-//    .collect();
-//  println!("Steps: [{}]", disp_result.join(", "));
-//  log::info!("Steps: [{}]", disp_result.join(", "));
-
   let stepx = WIDTH  / (*x as f32);
   let stepy = HEIGHT / (*y as f32);
   let dx = stepx / 2.0;
   let dy = stepy / 2.0;
-  let mut points: Vec<Vector4> = Vec::new();
+  //let img: RgbaImage = ImageBuffer::from_raw(*x, *y, pixels).unwrap();
+  let mut img: RgbaImage = ImageBuffer::new(*x, *y);
+  let mut points: Vec<Vector4>;
   for j in 0..*y {
+    let j2 = *y - 1 - j;
+    points = Vec::new();
     for i in 0..*x {
-      let vx = (i       as f32) * stepx + dx - (WIDTH  / 2.0);
-      let vy = ((y - j) as f32) * stepy - dy - (HEIGHT / 2.0);
+      let vx = (i  as f32) * stepx + dx - (WIDTH  / 2.0);
+      let vy = (j2 as f32) * stepy + dy - (HEIGHT / 2.0);
       points.push(Vector4::new(vx, vy, 0.0, 0.0))
     }
-  }
-
-  /*
-  let disp_before: Vec<String> = points.iter()
-    .map(|&n| n.to_string())
-    .collect();
-  println!("Before: [{}]", disp_before.join(", "));
-  */
-
-  match state.compute(&points).await {
-    Ok(result) => {
-      /*
-      let disp_result: Vec<String> = result.iter()
-        .map(|&n| match n {
-          //OVERFLOW => "OVERFLOW".to_string(),
-          _ => n.to_string(),
-        })
-        .collect();
-
-      println!("Steps: [{}]", disp_result.join(", "));
-      log::info!("Steps: [{}]", disp_result.join(", "));
-      */
-      let pixels: Vec<u8> = result.iter()
-        .map(|v| [v.v[0] as u8, v.v[1] as u8, v.v[2] as u8, v.v[3] as u8])
-        .flatten()
-        .collect();
-      let img: RgbaImage = ImageBuffer::from_raw(*x, *y, pixels).unwrap();
-      img.save("mandel.png").unwrap();
-
+    match state.compute(&points).await {
+      Ok(result) => {
+        let pixels: Vec<[u8; 4]> = result.iter()
+          .map(|v| [v.v[0] as u8, v.v[1] as u8, v.v[2] as u8, v.v[3] as u8])
+          .collect();
+        for (i, val) in pixels.iter().enumerate() {
+          img.put_pixel(i as u32, j2, Rgba::<u8>::from(*val))
+        }
+      }
+      Err(_) => log::warn!("compute error"),
     }
-    Err(_) => log::warn!("compute error"),
   }
 
+  img.save("mandel.png").unwrap();
 
 }
 
