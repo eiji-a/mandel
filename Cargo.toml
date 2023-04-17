@@ -17,6 +17,7 @@ log = "0.4"
 pollster = "0.2"
 bytemuck = { version = "1.12", features = [ "derive" ] }
 futures-intrusive = "0.4"
+image = "0.24"
 
 
 [build-dependencies]
