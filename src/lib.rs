@@ -153,6 +153,35 @@ impl State {
 
 }
 
+const LIMIT: u32 = 256;
+const THRE: f32 = 4.0;
+
+fn solve_mandel(points: &Vec<Vector4>) -> Result<Vec<Vector4>, bool> {
+  let mut res: Vec<Vector4> = vec![];
+
+  for c in points {
+    let mut a: f32 = 0.0;
+    let mut b: f32 = 0.0;
+    let mut d: f32 = 0.0;
+    let mut r: Vector4 = Vector4::new(0.0, 0.0, 0.0, 250.0);
+    for i in 0..LIMIT {
+      let a2 = a * a - (b * b) + c.v[0];
+      let b2 = 2.0 * a * b + c.v[1];
+      a = a2;
+      b = b2;
+      d = a * a + b * b;
+      if d > THRE {
+        let g = (i as f32) * 5.0;
+        //let h = 255.0 / (1.0 + f32::exp(-f32::log(d)));
+        r = Vector4::new(g, g, 0.0, 250.0);
+        break
+      }
+    }
+    res.push(r);
+  }
+  Ok(res)
+}
+
 const WIDTH:  f32 = 4.0;
 const HEIGHT: f32 = 4.0;
 
@@ -173,7 +202,8 @@ pub async fn run(x: &u32, y: &u32) {
       let vy = (j2 as f32) * stepy + dy - (HEIGHT / 2.0);
       points.push(Vector4::new(vx, vy, 0.0, 0.0))
     }
-    match state.compute(&points).await {
+    //match state.compute(&points).await {
+    match solve_mandel(&points) {
       Ok(result) => {
         let pixels: Vec<[u8; 4]> = result.iter()
           .map(|v| [v.v[0] as u8, v.v[1] as u8, v.v[2] as u8, v.v[3] as u8])
