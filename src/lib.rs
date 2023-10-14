@@ -123,7 +123,8 @@ impl State {
       cpass.set_pipeline(&self.compute_pipeline);
       cpass.set_bind_group(0, &bind_group, &[]);
       cpass.insert_debug_marker("compute mandel");
-      cpass.dispatch_workgroups(points.len() as u32, 1, 1);
+      //cpass.dispatch_workgroups(points.len() as u32, 1, 1);
+      cpass.dispatch_workgroups(64, 1, 1);
     }
   
     encoder.copy_buffer_to_buffer(&storage_buffer, 0, &staging_buffer, 0, size);
