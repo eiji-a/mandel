@@ -203,8 +203,8 @@ pub async fn run(x: &u32, y: &u32) {
       let vy = (j2 as f32) * stepy + dy - (HEIGHT / 2.0);
       points.push(Vector4::new(vx, vy, 0.0, 0.0))
     }
-    //match state.compute(&points).await {
-    match solve_mandel(&points) {
+    match state.compute(&points).await {
+    //match solve_mandel(&points) {
       Ok(result) => {
         let pixels: Vec<[u8; 4]> = result.iter()
           .map(|v| [v.v[0] as u8, v.v[1] as u8, v.v[2] as u8, v.v[3] as u8])
