@@ -83,23 +83,35 @@ impl State {
 
   }
 
+
   async fn compute(&mut self, points: &Vec<Vector4>) -> Result<Vec<Vector4>, wgpu::SurfaceError> {
 
-    let slice_size = points.len() * std::mem::size_of::<Vector4>();
-    let size = slice_size as wgpu::BufferAddress;
+    const BUFFSIZE: usize = std::mem::size_of::<Vector4>() * 65536;
+
+    let buffsize = BUFFSIZE as wgpu::BufferAddress;
 
     let staging_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
       label: None,
-      size,
+      size: buffsize,
       usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
       mapped_at_creation: false,
     });
 
+    /*
     let storage_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
       label: Some("Storage Buffer"),
       contents: bytemuck::cast_slice(&points),
       usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC,
     });
+    */
+    let storage_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+      label: Some("Storage Buffer"),
+      size: buffsize,
+      usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC,
+      mapped_at_creation: false,
+    });
+
+
 
     let bind_group_layout = self.compute_pipeline.get_bind_group_layout(0);
     let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -124,13 +136,16 @@ impl State {
       cpass.set_bind_group(0, &bind_group, &[]);
       cpass.insert_debug_marker("compute mandel");
       //cpass.dispatch_workgroups(points.len() as u32, 1, 1);
-      cpass.dispatch_workgroups(64, 1, 1);
+      cpass.dispatch_workgroups(256, 1, 1);
     }
   
-    encoder.copy_buffer_to_buffer(&storage_buffer, 0, &staging_buffer, 0, size);
+    let datasize = (points.len() * std::mem::size_of::<Vector4>()) as wgpu::BufferAddress;
+    self.queue.write_buffer(&storage_buffer, 0, bytemuck::cast_slice(&points));
+
+    encoder.copy_buffer_to_buffer(&storage_buffer, 0, &staging_buffer, 0, datasize);
     self.queue.submit(Some(encoder.finish()));
   
-    let buffer_slice = staging_buffer.slice(..);
+    let buffer_slice = staging_buffer.slice(0..datasize);
     let (tx, rx) = futures_intrusive::channel::shared::oneshot_channel();
     buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
       tx.send(result).unwrap();
@@ -147,7 +162,7 @@ impl State {
 
   
     drop(data);
-    staging_buffer.unmap();
+    //staging_buffer.unmap();
     Ok(vectors)
   
   }
