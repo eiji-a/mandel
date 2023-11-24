@@ -138,7 +138,7 @@ impl State {
       cpass.set_bind_group(0, &self.bind_group, &[]);
       cpass.insert_debug_marker("compute mandel");
       //cpass.dispatch_workgroups(points.len() as u32, 1, 1);
-      cpass.dispatch_workgroups(64, 1, 1);
+      cpass.dispatch_workgroups(256, 1, 1);
     }
   
     let datasize = (points.len() * std::mem::size_of::<Vector4>()) as wgpu::BufferAddress;
@@ -160,11 +160,12 @@ impl State {
       .chunks_exact(4)
       .map(|b| f32::from_ne_bytes(b.try_into().unwrap()))
       .collect();
-    let vectors = result.chunks(4).map(|v| Vector4::new(v[0], v[1], v[2], v[3])).collect();
 
   
     drop(data);
     self.staging_buffer.unmap();
+
+    let vectors = result.chunks(4).map(|v| Vector4::new(v[0], v[1], v[2], v[3])).collect();
     Ok(vectors)
   
   }
@@ -237,4 +238,9 @@ pub async fn run(x: &u32, y: &u32) {
   img.save("mandel.png").unwrap();
 
 }
+
+// real	0m11.522s
+// user	0m6.110s
+// sys	0m0.888s
+
 

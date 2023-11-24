@@ -64,7 +64,7 @@ fn mandel(c: vec4<f32>) -> vec4<f32> {
     d = a * a + b * b;
     if (d > THRE) {
       let g = f32(i) * 5.0;
-      let h = 255.0 / (1.0 + exp(-log(d)));
+      //let h = 255.0 / (1.0 + exp(-log(d)));
       //return ret;
       return vec4(g, g, 0.0, 250.0);
     }
